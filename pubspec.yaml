@@ -1,0 +1,50 @@
+# pubspec.yaml
+
+name: kapture
+description: Offline-first photography learning assistant
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # Database
+  sqflite: ^2.3.0
+  path: ^1.8.3
+  path_provider: ^2.1.1
+  
+  # Cactus AI (check latest version on pub.dev)
+  cactus: ^1.0.0
+  
+  # UI
+  cupertino_icons: ^1.0.2
+  
+  # Camera
+  camera: ^0.10.5
+  image_picker: ^1.0.4
+  
+  # HTTP for cloud API
+  http: ^1.1.0
+  
+  # JSON
+  json_annotation: ^4.8.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+  json_serializable: ^6.7.1
+  build_runner: ^2.4.6
+
+flutter:
+  uses-material-design: true
+  
+  # Assets folder (we'll add models and guides here)
+  assets:
+    - assets/models/
+    - assets/guides/
+    - assets/icons/
