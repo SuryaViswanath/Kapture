@@ -9,6 +9,7 @@ import 'new_track_screen.dart';
 import 'active_track_screen.dart';
 import 'profile_screen.dart';
 import 'model_status_screen.dart';
+import 'chat_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -85,11 +86,14 @@ class _HomeScreenState extends State<HomeScreen> {
 ),
       body: activeTrack == null ? _buildNoTrackView() : _buildTrackView(),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Open chat interface
-        },
-        child: const Icon(Icons.chat),
-      ),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ChatScreen()),
+    );
+  },
+  child: const Icon(Icons.chat),
+),
     );
   }
 
