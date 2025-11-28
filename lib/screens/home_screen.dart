@@ -10,6 +10,7 @@ import 'active_track_screen.dart';
 import 'profile_screen.dart';
 import 'model_status_screen.dart';
 import 'chat_screen.dart';
+import 'ai_debug_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -64,6 +65,15 @@ class _HomeScreenState extends State<HomeScreen> {
   title: const Text('Kapture'),
   actions: [
     // ADD THIS DEBUG BUTTON
+    IconButton(
+    icon: const Icon(Icons.bug_report),
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const AIDebugScreen()),
+      );
+    },
+  ),
     IconButton(
       icon: const Icon(Icons.storage),
       onPressed: () {
