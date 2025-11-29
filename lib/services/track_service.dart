@@ -1,4 +1,4 @@
-// lib/services/track_service.dart
+// lib/services/track_service. dart
 
 import 'package:sqflite/sqflite.dart';
 import '../services/database_helper.dart';
@@ -11,7 +11,7 @@ class TrackService {
   TrackService._init();
 
   // Get current user
-  Future<User?> getCurrentUser() async {
+  Future<User? > getCurrentUser() async {
     final db = await DatabaseHelper.instance.database;
     final result = await db.query('users', limit: 1);
     
@@ -46,26 +46,62 @@ class TrackService {
     return result.map((map) => Track.fromMap(map)).toList();
   }
 
-  // Get today's challenge
+  // Get current day number for a track
+  Future<int> getCurrentDayNumber(int trackId) async {
+    final db = await DatabaseHelper.instance.database;
+    
+    // Count completed challenges + 1
+    final completedCount = Sqflite.firstIntValue(
+      await db.rawQuery(
+        'SELECT COUNT(*) FROM challenges WHERE track_id = ? AND completed = 1',
+        [trackId],
+      ),
+    ) ??  0;
+    
+    // Current day is the next uncompleted day
+    return completedCount + 1;
+  }
+
+  // Get today's challenge (or next uncompleted challenge)
   Future<Challenge?> getTodayChallenge(int trackId) async {
     final db = await DatabaseHelper.instance.database;
     
-    // Get track start date and calculate current day
-    final trackResult = await db.query('tracks', where: 'id = ?', whereArgs: [trackId]);
-    if (trackResult.isEmpty) return null;
-    
-    final track = Track.fromMap(trackResult.first);
-    final daysPassed = DateTime.now().difference(track.createdAt).inDays + 1;
+    // Get the current day number based on completed challenges
+    final currentDay = await getCurrentDayNumber(trackId);
     
     // Get challenge for current day
     final result = await db.query(
       'challenges',
       where: 'track_id = ? AND day_number = ?',
-      whereArgs: [trackId, daysPassed],
+      whereArgs: [trackId, currentDay],
       limit: 1,
     );
     
-    if (result.isEmpty) return null;
+    if (result.isEmpty) {
+      print('⚠️ No challenge found for day $currentDay');
+      return null;
+    }
+    
+    print('✅ Found challenge for day $currentDay');
+    return Challenge.fromMap(result.first);
+  }
+
+  // Get next challenge after completing current one
+  Future<Challenge? > getNextChallenge(int trackId) async {
+    final db = await DatabaseHelper.instance. database;
+    
+    // Get next day number
+    final nextDay = await getCurrentDayNumber(trackId);
+    
+    // Get challenge for next day
+    final result = await db.query(
+      'challenges',
+      where: 'track_id = ? AND day_number = ?',
+      whereArgs: [trackId, nextDay],
+      limit: 1,
+    );
+    
+    if (result. isEmpty) return null;
     return Challenge.fromMap(result.first);
   }
 
@@ -74,13 +110,13 @@ class TrackService {
     final db = await DatabaseHelper.instance.database;
     final result = await db.query(
       'challenges',
-      where: 'track_id = ?',
+      where: 'track_id = ? AND completed = 1',
       whereArgs: [trackId],
       orderBy: 'day_number DESC',
       limit: limit,
     );
     
-    return result.map((map) => Challenge.fromMap(map)).toList();
+    return result.map((map) => Challenge.fromMap(map)). toList();
   }
 
   // Calculate track progress
@@ -90,8 +126,8 @@ class TrackService {
     final track = await db.query('tracks', where: 'id = ?', whereArgs: [trackId]);
     if (track.isEmpty) return {};
     
-    final totalDays = Track.fromMap(track.first).durationDays;
-    final daysPassed = DateTime.now().difference(Track.fromMap(track.first).createdAt).inDays + 1;
+    final totalDays = Track.fromMap(track.first). durationDays;
+    final currentDay = await getCurrentDayNumber(trackId);
     
     final completedCount = Sqflite.firstIntValue(
       await db.rawQuery(
@@ -101,10 +137,10 @@ class TrackService {
     ) ?? 0;
     
     return {
-      'currentDay': daysPassed > totalDays ? totalDays : daysPassed,
+      'currentDay': currentDay > totalDays ? totalDays : currentDay,
       'totalDays': totalDays,
       'completedChallenges': completedCount,
-      'progress': (daysPassed / totalDays).clamp(0.0, 1.0),
+      'progress': (completedCount / totalDays). clamp(0.0, 1.0),
     };
   }
 }

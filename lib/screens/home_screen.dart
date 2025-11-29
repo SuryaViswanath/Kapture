@@ -659,38 +659,46 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       const SizedBox(height: 20),
                       
                       // Start button
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            final todayChallenge = await TrackService.instance.getTodayChallenge(track.id!);
-                            if (todayChallenge != null && mounted) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ActiveTrackScreen(challenge: todayChallenge),
-                                ),
-                              ).then((_) => _loadData());
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: color,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                      FutureBuilder<int>(
+                      future: TrackService.instance.getCurrentDayNumber(track.id!),
+                      builder: (context, snapshot) {
+                        final currentDay = snapshot.data ?? 1;
+                        final hasStarted = currentDay > 1;
+                        
+                        return SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              final todayChallenge = await TrackService. instance.getTodayChallenge(track.id!);
+                              if (todayChallenge != null && mounted) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ActiveTrackScreen(challenge: todayChallenge),
+                                  ),
+                                ). then((_) => _loadData());
+                              }
+                            },
+                            style: ElevatedButton. styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: color,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius. circular(16),
+                              ),
+                            ),
+                            child: Text(
+                              hasStarted ? 'Continue Challenge' : 'Start Challenge',
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                          child: const Text(
-                            'Start Challenge',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
+                        );
+                      },
+                    ),
                     ],
                   ),
                 ),

@@ -467,7 +467,8 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
                 style: const TextStyle(
                   fontSize: 15,
                   height: 1.6,
-                  color: AppTheme.textPrimary,
+                  color: AppTheme. textPrimary,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -483,10 +484,10 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
                 decoration: BoxDecoration(
                   color: AppTheme.cardColor,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.accentColor, width: 2),
+                  border: Border.all(color: AppTheme.primaryColor, width: 2),
                 ),
                 child: Text(
-                  '• ${widget.challenge.tips}',
+                  widget.challenge.tips! ,
                   style: const TextStyle(
                     fontSize: 14,
                     height: 1.6,
@@ -831,4 +832,5 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
       ),
     );
   }
+
 }
