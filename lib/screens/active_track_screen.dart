@@ -13,6 +13,8 @@ import '../services/photo_evaluator.dart';
 import '../theme/app_theme.dart';
 import 'chat_screen.dart';
 import 'feedback_screen.dart';
+import '../services/gemini_evaluator.dart';
+
 
 class ActiveTrackScreen extends StatefulWidget {
   final Challenge challenge;
@@ -39,7 +41,9 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
     setState(() => isLoading = true);
     
     subtasks = await SubtaskService.instance.getChallengeSubtasks(widget.challenge.id!);
-    
+      
+    // await GeminiEvaluator.instance.listAvailableModels();
+  
     // Load existing photos if any
     final db = await DatabaseHelper.instance.database;
     final submissions = await db.query(
@@ -297,12 +301,12 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
     print('📊 Level: $skillLevel');
 
     // Evaluate photos
-    final evaluation = await PhotoEvaluator.instance.evaluatePhotos(
-      challenge: widget.challenge,
-      photoPaths: photoPaths,
-      photographyStyle: photographyStyle,
-      skillLevel: skillLevel,
-    );
+    final evaluation = await GeminiEvaluator.instance.evaluatePhotos(
+  challenge: widget.challenge,
+  photoPaths: photoPaths,
+  photographyStyle: photographyStyle,
+  skillLevel: skillLevel,
+);
 
     print('✅ Evaluation complete');
 
@@ -369,22 +373,23 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
       Navigator.pop(context);
     }
   } catch (e) {
-    print('❌ Error during submission: $e');
-    
-    // Close loading dialog
-    if (mounted) Navigator.pop(context);
+  print('❌ Error during submission: $e');
+  
+  // Close loading dialog
+  if (mounted) Navigator.pop(context);
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error evaluating photos: ${e.toString()}'),
-          backgroundColor: AppTheme.accentColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-    }
+  if (mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Could not evaluate photos. Please check your internet connection and try again.'),
+        backgroundColor: AppTheme.accentColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
+}
 }
 
   @override

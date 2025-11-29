@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import '../services/photo_evaluator.dart';
 import '../theme/app_theme.dart';
+import '../services/gemini_evaluator.dart';
 
 class FeedbackScreen extends StatelessWidget {
-  final PhotoEvaluationResult evaluation;
+//   final PhotoEvaluationResult evaluation;
+final GeminiEvaluationResult evaluation;
   final List<String> photoPaths;
 
   const FeedbackScreen({
