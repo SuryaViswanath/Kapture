@@ -1,4 +1,4 @@
-// lib/screens/active_track_screen.dart - COMPLETE REPLACEMENT
+// lib/screens/active_track_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -7,6 +7,7 @@ import '../models/challenge.dart';
 import '../models/subtask.dart';
 import '../services/subtask_service.dart';
 import '../services/database_helper.dart';
+import '../theme/app_theme.dart';
 import 'chat_screen.dart';
 
 class ActiveTrackScreen extends StatefulWidget {
@@ -56,13 +57,18 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
 
   Future<void> _toggleSubtask(Subtask subtask) async {
     await SubtaskService.instance.toggleSubtask(subtask.id!, !subtask.completed);
-    await _loadData(); // Reload to update UI
+    await _loadData();
   }
 
   Future<void> _pickPhoto() async {
     if (photoPaths.length >= 3) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Maximum 3 photos allowed')),
+        SnackBar(
+          content: const Text('Maximum 3 photos allowed'),
+          backgroundColor: AppTheme.textPrimary,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       );
       return;
     }
@@ -78,24 +84,42 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
           photoPaths.add(photo.path);
         });
         
-        // Save to database
         await _savePhotos();
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Photo added!')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Photo added!'),
+              backgroundColor: AppTheme.primaryColor,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: AppTheme.accentColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
     }
   }
 
   Future<void> _pickFromGallery() async {
     if (photoPaths.length >= 3) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Maximum 3 photos allowed')),
+        SnackBar(
+          content: const Text('Maximum 3 photos allowed'),
+          backgroundColor: AppTheme.textPrimary,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       );
       return;
     }
@@ -113,21 +137,34 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
         
         await _savePhotos();
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Photo added!')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Photo added!'),
+              backgroundColor: AppTheme.primaryColor,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: AppTheme.accentColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
     }
   }
 
   Future<void> _savePhotos() async {
     final db = await DatabaseHelper.instance.database;
     
-    // Check if submission exists
     final existing = await db.query(
       'submissions',
       where: 'challenge_id = ?',
@@ -137,7 +174,6 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
     final photoPathsString = photoPaths.join(',');
     
     if (existing.isEmpty) {
-      // Create new submission
       await db.insert('submissions', {
         'challenge_id': widget.challenge.id,
         'photo_paths': photoPathsString,
@@ -145,7 +181,6 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
         'validated': 0,
       });
     } else {
-      // Update existing
       await db.update(
         'submissions',
         {'photo_paths': photoPathsString},
@@ -165,22 +200,30 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
   Future<void> _submitForReview() async {
     if (photoPaths.length < 3) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please upload 3 photos before submitting')),
+        SnackBar(
+          content: const Text('Please upload 3 photos before submitting'),
+          backgroundColor: AppTheme.accentColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       );
       return;
     }
 
-    // Check if all subtasks are completed
     final allCompleted = await SubtaskService.instance.areAllSubtasksCompleted(widget.challenge.id!);
     
     if (!allCompleted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please complete all subtasks first')),
+        SnackBar(
+          content: const Text('Please complete all tasks first'),
+          backgroundColor: AppTheme.accentColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       );
       return;
     }
 
-    // Mark as submitted (cloud validation will come later)
     final db = await DatabaseHelper.instance.database;
     await db.update(
       'submissions',
@@ -189,7 +232,6 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
       whereArgs: [widget.challenge.id],
     );
 
-    // Mark challenge as completed
     await db.update(
       'challenges',
       {
@@ -202,9 +244,14 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Challenge completed! (Cloud validation coming soon)')),
+        SnackBar(
+          content: const Text('✅ Challenge completed!'),
+          backgroundColor: AppTheme.primaryColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       );
-      Navigator.pop(context); // Go back to home
+      Navigator.pop(context);
     }
   }
 
@@ -212,16 +259,50 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
   Widget build(BuildContext context) {
     if (isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        backgroundColor: AppTheme.backgroundColor,
+        body: Center(
+          child: CircularProgressIndicator(
+            color: AppTheme.accentColor,
+            strokeWidth: 2,
+          ),
+        ),
       );
     }
 
     return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: Text('Day ${widget.challenge.dayNumber}'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppTheme.textPrimary),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Row(
+          children: [
+            Text(
+              'Day ${widget.challenge.dayNumber}',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: AppTheme.accentColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
+        ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -229,84 +310,74 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
             Text(
               widget.challenge.title,
               style: const TextStyle(
-                fontSize: 24,
+                fontSize: 32,
                 fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+                letterSpacing: -1.0,
+                height: 1.2,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
 
-            // Challenge Description
-            const Text(
-              'Challenge Description',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+            // Description Section
+            _buildSectionHeader('Description', Icons.description),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppTheme.cardColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.borderColor),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              widget.challenge.description,
-              style: const TextStyle(fontSize: 16, height: 1.5),
+              child: Text(
+                widget.challenge.description,
+                style: const TextStyle(
+                  fontSize: 15,
+                  height: 1.6,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
             ),
             const SizedBox(height: 24),
 
             // Tips Section
             if (widget.challenge.tips != null && widget.challenge.tips!.isNotEmpty) ...[
-              const Row(
-                children: [
-                  Icon(Icons.lightbulb_outline, color: Colors.orange),
-                  SizedBox(width: 8),
-                  Text(
-                    'Tips',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
+              _buildSectionHeader('Pro Tips', Icons.lightbulb_outline),
+              const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.all(16),
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppTheme.cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.accentColor, width: 2),
                 ),
                 child: Text(
                   '• ${widget.challenge.tips}',
-                  style: const TextStyle(fontSize: 14, height: 1.6),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.6,
+                    color: AppTheme.textPrimary,
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
             ],
 
-            // Subtasks Section
-            const Text(
-              'Tasks',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            // Tasks Section
+            _buildSectionHeader('Tasks', Icons.checklist),
             const SizedBox(height: 12),
-
             ...subtasks.map((subtask) => _buildSubtaskCard(subtask)),
 
             const SizedBox(height: 24),
 
             // Photos Section
-            Text(
-              'Photos (${photoPaths.length}/3)',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            _buildSectionHeader('Photos (${photoPaths.length}/3)', Icons.photo_library),
             const SizedBox(height: 12),
-
             _buildPhotoGrid(),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
             // Submit Button
             SizedBox(
@@ -315,46 +386,150 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
               child: ElevatedButton(
                 onPressed: photoPaths.length == 3 ? _submitForReview : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: photoPaths.length == 3 ? AppTheme.accentColor : AppTheme.borderColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                child: const Text(
-                  'Submit for Review',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.check_circle, size: 20),
+                    SizedBox(width: 12),
+                    Text(
+                      'Submit Challenge',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(  // <-- ADD THIS
-    onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const ChatScreen()),
-      );
-    },
-    child: const Icon(Icons.chat),
-    backgroundColor: Colors.blue,
-  ),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: AppTheme.accentColor, width: 2),
+        ),
+        child: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ChatScreen()),
+            );
+          },
+          backgroundColor: AppTheme.primaryColor,
+          elevation: 0,
+          child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: AppTheme.accentColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            size: 16,
+            color: AppTheme.accentColor,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textPrimary,
+            letterSpacing: -0.3,
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildSubtaskCard(Subtask subtask) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: CheckboxListTile(
-        value: subtask.completed,
-        onChanged: (value) => _toggleSubtask(subtask),
-        title: Text(subtask.title),
-        subtitle: subtask.description != null ? Text(subtask.description!) : null,
-        controlAffinity: ListTileControlAffinity.leading,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: GestureDetector(
+        onTap: () => _toggleSubtask(subtask),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: subtask.completed ? AppTheme.primaryColor : AppTheme.cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: subtask.completed ? AppTheme.accentColor : AppTheme.borderColor,
+              width: subtask.completed ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: subtask.completed 
+                      ? AppTheme.accentColor 
+                      : Colors.transparent,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: subtask.completed 
+                        ? AppTheme.accentColor 
+                        : AppTheme.borderColor,
+                    width: 2,
+                  ),
+                ),
+                child: subtask.completed
+                    ? const Icon(Icons.check, size: 16, color: Colors.white)
+                    : null,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      subtask.title,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: subtask.completed ? Colors.white : AppTheme.textPrimary,
+                      ),
+                    ),
+                    if (subtask.description != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        subtask.description!,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: subtask.completed 
+                              ? Colors.white.withOpacity(0.8)
+                              : AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -365,8 +540,8 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
       ),
       itemCount: photoPaths.length + (photoPaths.length < 3 ? 1 : 0),
       itemBuilder: (context, index) {
@@ -375,23 +550,32 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
           return Stack(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.file(
-                  File(photoPaths[index]),
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  height: double.infinity,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppTheme.borderColor, width: 2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.file(
+                      File(photoPaths[index]),
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                    ),
+                  ),
                 ),
               ),
               Positioned(
-                top: 4,
-                right: 4,
+                top: 6,
+                right: 6,
                 child: GestureDetector(
                   onTap: () => _removePhoto(index),
                   child: Container(
-                    padding: const EdgeInsets.all(4),
+                    padding: const EdgeInsets.all(6),
                     decoration: const BoxDecoration(
-                      color: Colors.red,
+                      color: AppTheme.accentColor,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -410,14 +594,14 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
             onTap: () => _showPhotoOptions(),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade400, width: 2),
+                color: AppTheme.cardColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.borderColor, width: 2),
               ),
               child: const Icon(
                 Icons.add_photo_alternate,
-                size: 40,
-                color: Colors.grey,
+                size: 36,
+                color: AppTheme.textSecondary,
               ),
             ),
           );
@@ -429,25 +613,82 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
   void _showPhotoOptions() {
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppTheme.backgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppTheme.borderColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              _buildPhotoOption(
+                icon: Icons.camera_alt,
+                title: 'Take Photo',
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickPhoto();
+                },
+              ),
+              const SizedBox(height: 12),
+              _buildPhotoOption(
+                icon: Icons.photo_library,
+                title: 'Choose from Gallery',
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickFromGallery();
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPhotoOption({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.borderColor),
+        ),
+        child: Row(
           children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Take Photo'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickPhoto();
-              },
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppTheme.accentColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: AppTheme.accentColor, size: 22),
             ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Choose from Gallery'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickFromGallery();
-              },
+            const SizedBox(width: 16),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
             ),
           ],
         ),
