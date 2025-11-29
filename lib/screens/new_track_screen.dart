@@ -120,7 +120,7 @@ class _NewTrackScreenState extends State<NewTrackScreen> with SingleTickerProvid
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('✅ Track created successfully!'),
+            content: const Text('âœ… Track created successfully!'),
             backgroundColor: AppTheme.primaryColor,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -132,7 +132,7 @@ class _NewTrackScreenState extends State<NewTrackScreen> with SingleTickerProvid
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('❌ Error: ${e.toString()}'),
+            content: Text('âŒ Error: ${e.toString()}'),
             backgroundColor: AppTheme.accentColor,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -331,8 +331,8 @@ class _NewTrackScreenState extends State<NewTrackScreen> with SingleTickerProvid
                     color: isSelected ? AppTheme.primaryColor : AppTheme.cardColor,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isSelected ? AppTheme.accentColor : AppTheme.borderColor,
-                      width: isSelected ? 2 : 1,
+                      color: AppTheme.borderColor,
+                      width: 1,
                     ),
                   ),
                   child: Column(
@@ -382,8 +382,8 @@ class _NewTrackScreenState extends State<NewTrackScreen> with SingleTickerProvid
                       color: isSelected ? AppTheme.primaryColor : AppTheme.cardColor,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isSelected ? AppTheme.accentColor : AppTheme.borderColor,
-                        width: isSelected ? 2 : 1,
+                        color: AppTheme.borderColor,
+                        width: 1,
                       ),
                     ),
                     child: Row(
@@ -413,12 +413,6 @@ class _NewTrackScreenState extends State<NewTrackScreen> with SingleTickerProvid
                             ),
                           ),
                         ),
-                        if (isSelected)
-                          const Icon(
-                            Icons.check_circle,
-                            color: AppTheme.accentColor,
-                            size: 22,
-                          ),
                       ],
                     ),
                   ),
@@ -452,8 +446,8 @@ class _NewTrackScreenState extends State<NewTrackScreen> with SingleTickerProvid
                         color: isSelected ? AppTheme.primaryColor : AppTheme.cardColor,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isSelected ? AppTheme.accentColor : AppTheme.borderColor,
-                          width: isSelected ? 2 : 1,
+                          color: AppTheme.borderColor,
+          width: 1,
                         ),
                       ),
                       child: Column(
@@ -512,7 +506,7 @@ class _NewTrackScreenState extends State<NewTrackScreen> with SingleTickerProvid
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: AppTheme.accentColor,
+                        color: AppTheme.primaryColor,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -529,10 +523,10 @@ class _NewTrackScreenState extends State<NewTrackScreen> with SingleTickerProvid
                 const SizedBox(height: 20),
                 SliderTheme(
                   data: SliderThemeData(
-                    activeTrackColor: AppTheme.accentColor,
+                    activeTrackColor: AppTheme.primaryColor,
                     inactiveTrackColor: AppTheme.borderColor,
-                    thumbColor: AppTheme.accentColor,
-                    overlayColor: AppTheme.accentColor.withOpacity(0.2),
+                    thumbColor: AppTheme.primaryColor,
+                    overlayColor: AppTheme.primaryColor.withOpacity(0.2),
                     trackHeight: 4,
                     thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
                   ),
@@ -606,8 +600,8 @@ class _NewTrackScreenState extends State<NewTrackScreen> with SingleTickerProvid
                         color: isSelected ? AppTheme.primaryColor : AppTheme.cardColor,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isSelected ? AppTheme.accentColor : AppTheme.borderColor,
-                          width: isSelected ? 2 : 1,
+                          color: AppTheme.borderColor,
+          width: 1,
                         ),
                       ),
                       child: Column(
@@ -650,7 +644,7 @@ class _NewTrackScreenState extends State<NewTrackScreen> with SingleTickerProvid
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppTheme.accentColor,
+                    color: AppTheme.primaryColor,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
@@ -735,13 +729,13 @@ class _NewTrackScreenState extends State<NewTrackScreen> with SingleTickerProvid
         Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: AppTheme.accentColor.withOpacity(0.1),
+            color: AppTheme.primaryColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
             size: 16,
-            color: AppTheme.accentColor,
+            color: AppTheme.primaryColor,
           ),
         ),
         const SizedBox(width: 10),

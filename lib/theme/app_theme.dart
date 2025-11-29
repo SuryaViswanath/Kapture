@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 
 class AppTheme {
   // Nothing Phone Inspired Color Palette
-  // Monochromatic with subtle red accent
-  static const primaryColor = Color(0xFF000000); // Pure Black
-  static const secondaryColor = Color(0xFF1A1A1A); // Dark Gray
-  static const accentColor = Color(0xFFFF0000); // Nothing Red (for highlights)
-  static const successColor = Color(0xFF000000); // Black for success
+  // Monochromatic with strategic red accents
+  static const primaryColor = Color(0xFF1A1A1A); // Lighter black
+  static const secondaryColor = Color(0xFF2D2D2D); // Medium dark
+  static const accentColor = Color(0xFFFF0000); // Red for accents
+  static const successColor = Color(0xFF000000); // Pure black for emphasis
   static const backgroundColor = Color(0xFFFFFFFF); // Pure White
   static const cardColor = Color(0xFFF5F5F5); // Light Gray
   static const textPrimary = Color(0xFF000000); // Black

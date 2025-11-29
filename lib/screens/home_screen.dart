@@ -31,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _streakController;
   int _currentPhotoIndex = 0;
   final PageController _photoPageController = PageController();
-  final PageController _challengePageController = PageController(viewportFraction: 0.8);
+  final PageController _challengePageController = PageController();
 
   // Mock data for photos of the week with image paths
   final List<Map<String, String>> photosOfWeek = [
@@ -142,13 +142,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               onPressed: () => Scaffold.of(context).openDrawer(),
             ),
           ),
-          title: const Text(
-            'Kapture',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimary,
-            ),
+          title: Row(
+            children: [
+              const Text(
+                'Kapture',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: AppTheme.accentColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
           ),
           actions: [
             IconButton(
@@ -195,15 +208,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          gradient: AppTheme.primaryGradient,
+          color: AppTheme.cardColor,
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primaryColor.withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          border: Border.all(color: AppTheme.borderColor, width: 1),
         ),
         child: Column(
           children: [
@@ -216,7 +223,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     Text(
                       '$currentStreak-day win streak',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.textPrimary,
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
@@ -225,7 +232,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     const Text(
                       'DONT QUIT!',
                       style: TextStyle(
-                        color: Colors.white70,
+                        color: AppTheme.textSecondary,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -242,7 +249,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: AppTheme.primaryColor,
                       shape: BoxShape.circle,
                     ),
                     child: const Text(
@@ -268,8 +275,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       height: 32,
                       decoration: BoxDecoration(
                         color: isActive 
-                            ? AppTheme. accentColor 
-                            : Colors.white.withOpacity(0.3),
+                            ? AppTheme.primaryColor 
+                            : AppTheme.borderColor,
                         shape: BoxShape.circle,
                       ),
                       child: Center(
@@ -282,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     Text(
                       ['M', 'T', 'W', 'T', 'F', 'S', 'S'][index],
                       style: const TextStyle(
-                        color: Colors.white70,
+                        color: AppTheme.textSecondary,
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                       ),
@@ -304,7 +311,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Pic of the week',
+            'Pictures of the week',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -312,13 +319,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
           const SizedBox(height: 12),
-          Container(
+          SizedBox(
             height: 220,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.grey.shade300),
-            ),
             child: Stack(
               children: [
                 PageView.builder(
@@ -328,85 +330,79 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     setState(() => _currentPhotoIndex = index);
                   },
                   itemBuilder: (context, index) {
-                    return Container(
-                      margin: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            // Image
-                            Image.asset(
-                              photosOfWeek[index]['image']!,
-                              fit: BoxFit. cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                // Fallback UI if image fails to load
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Colors. grey.shade300,
-                                        Colors.grey.shade200,
-                                      ],
-                                    ),
-                                  ),
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons. broken_image,
-                                      size: 48,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            
-                            // Gradient overlay for text readability
-                            Positioned(
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              child: Container(
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          // Image
+                          Image.asset(
+                            photosOfWeek[index]['image']!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              // Fallback UI if image fails to load
+                              return Container(
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
                                     colors: [
-                                      Colors.transparent,
-                                      Colors.black.withOpacity(0.7),
+                                      Colors.grey.shade300,
+                                      Colors.grey.shade200,
                                     ],
                                   ),
                                 ),
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      photosOfWeek[index]['user']!,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      photosOfWeek[index]['style']!,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.white70,
-                                      ),
-                                    ),
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.broken_image,
+                                    size: 48,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          
+                          // Gradient overlay for text readability
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withOpacity(0.7),
                                   ],
                                 ),
                               ),
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    photosOfWeek[index]['user']!,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    photosOfWeek[index]['style']!,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     );
                   },
@@ -465,30 +461,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 400,
-          child: PageView. builder(
+          height: 220,
+          child: PageView.builder(
             controller: _challengePageController,
             onPageChanged: (index) {
               setState(() => _currentChallengeIndex = index);
             },
             itemCount: allTracks.length,
             itemBuilder: (context, index) {
-              return AnimatedBuilder(
-                animation: _challengePageController,
-                builder: (context, child) {
-                  double value = 1.0;
-                  if (_challengePageController.position.haveDimensions) {
-                    value = _challengePageController.page!  - index;
-                    value = (1 - (value. abs() * 0.3)).clamp(0.7, 1.0);
-                  }
-                  
-                  return Center(
-                    child: SizedBox(
-                      height: Curves.easeOut.transform(value) * 380,
-                      child: child,
-                    ),
-                  );
-                },
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: _buildTrackCard(allTracks[index], index),
               );
             },
@@ -546,26 +528,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ). then((_) => _loadData());
         }
       },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Card(
-          elevation: 8,
-          shadowColor: color.withOpacity(0.4),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  color.withOpacity(0.9),
-                  color,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(28),
+      child: Card(
+        elevation: 8,
+        shadowColor: color.withOpacity(0.4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                color.withOpacity(0.9),
+                color,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
+            borderRadius: BorderRadius.circular(20),
+          ),
             child: Stack(
               children: [
                 // Background pattern
@@ -584,14 +564,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 
                 // Content
                 Padding(
-                  padding: const EdgeInsets.all(28),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       // Icon
                       Container(
-                        padding: const EdgeInsets.all(18),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.25),
                           shape: BoxShape.circle,
@@ -599,11 +579,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         child: Icon(
                           getStyleIcon(track.style),
                           color: Colors.white,
-                          size: 40,
+                          size: 24,
                         ),
                       ),
                       
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 10),
                       
                       // Style name
                       Text(
@@ -611,42 +591,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 26,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          height: 1.1,
+                          height: 1.0,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       
-                      const SizedBox(height: 6),
-                      
-                      // Track name
-                      Text(
-                        track.name,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 14,
-                          height: 1.3,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 10),
                       
                       // Stats
                       Row(
-                        mainAxisAlignment: MainAxisAlignment. spaceEvenly,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           _buildStatItem(
                             icon: Icons.calendar_today,
-                            label: '${track. durationDays} days',
+                            label: '${track.durationDays}d',
                           ),
                           Container(
                             width: 1,
-                            height: 24,
+                            height: 14,
                             color: Colors.white.withOpacity(0.3),
                           ),
                           _buildStatItem(
@@ -656,7 +621,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ],
                       ),
                       
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 10),
                       
                       // Start button
                       FutureBuilder<int>(
@@ -669,29 +634,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: () async {
-                              final todayChallenge = await TrackService. instance.getTodayChallenge(track.id!);
+                              final todayChallenge = await TrackService.instance.getTodayChallenge(track.id!);
                               if (todayChallenge != null && mounted) {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => ActiveTrackScreen(challenge: todayChallenge),
                                   ),
-                                ). then((_) => _loadData());
+                                ).then((_) => _loadData());
                               }
                             },
-                            style: ElevatedButton. styleFrom(
+                            style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
                               foregroundColor: color,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              padding: const EdgeInsets.symmetric(vertical: 8),
                               elevation: 0,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius. circular(16),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                             ),
                             child: Text(
-                              hasStarted ? 'Continue Challenge' : 'Start Challenge',
+                              hasStarted ? 'Continue' : 'Start',
                               style: const TextStyle(
-                                fontSize: 15,
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -706,7 +671,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
         ),
-      ),
     );
   }
 
@@ -714,13 +678,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: Colors.white. withOpacity(0.9), size: 16),
-        const SizedBox(width: 4),
+        Icon(icon, color: Colors.white.withOpacity(0.9), size: 12),
+        const SizedBox(width: 3),
         Text(
           label,
           style: TextStyle(
-            color: Colors.white. withOpacity(0.9),
-            fontSize: 13,
+            color: Colors.white.withOpacity(0.9),
+            fontSize: 11,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -758,8 +722,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         width: double.infinity,
         height: 64,
         decoration: BoxDecoration(
-          gradient: AppTheme.primaryGradient,
-          borderRadius: BorderRadius. circular(20),
+          color: AppTheme.primaryColor,
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
               color: AppTheme.primaryColor.withOpacity(0.3),
@@ -922,7 +886,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => const ChatScreen(), // ← No challenge = general mode
+            builder: (context) => const ChatScreen(), // â† No challenge = general mode
           ),
         );
       },
