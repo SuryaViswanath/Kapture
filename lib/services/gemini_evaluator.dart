@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/challenge.dart';
+import '../config/env_config.dart';
 
 class GeminiEvaluationResult {
   final String feedback;
@@ -33,8 +34,8 @@ class GeminiEvaluator {
   static final GeminiEvaluator instance = GeminiEvaluator._init();
   GeminiEvaluator._init();
 
-  // IMPORTANT: Replace with your actual API key
-  static const String _apiKey = 'AIzaSyDY1g_OffsnZ5z9NX7bmm6952_njSk-V5c';
+  // Load API key from environment
+  String get _apiKey => EnvConfig.geminiApiKey;
 
   Future<GeminiEvaluationResult> evaluatePhotos({
     required Challenge challenge,
@@ -42,7 +43,7 @@ class GeminiEvaluator {
     required String photographyStyle,
     required String skillLevel,
   }) async {
-    print('🎯 Evaluating ${photoPaths.length} photos with Gemini API');
+    print('ðŸŽ¯ Evaluating ${photoPaths.length} photos with Gemini API');
 
     // Build the prompt
     final prompt = _buildEvaluationPrompt(
@@ -71,7 +72,7 @@ class GeminiEvaluator {
       }
     };
 
-    print('📡 Sending request to Gemini API...');
+    print('ðŸ“¡ Sending request to Gemini API...');
 
     final url = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=$_apiKey';
 
@@ -81,7 +82,7 @@ class GeminiEvaluator {
       body: jsonEncode(requestBody),
     );
 
-    print('📥 Response status: ${response.statusCode}');
+    print('ðŸ“¥ Response status: ${response.statusCode}');
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
@@ -95,7 +96,7 @@ class GeminiEvaluator {
       
       // Check finish reason
       if (candidate['finishReason'] == 'MAX_TOKENS') {
-        print('⚠️ Warning: Response was truncated (hit token limit)');
+        print('âš ï¸ Warning: Response was truncated (hit token limit)');
       }
       
       // Extract text from content.parts
@@ -107,15 +108,15 @@ class GeminiEvaluator {
       
       final feedback = content['parts'][0]['text'];
       
-      print('✅ Evaluation complete');
-      print('📝 Feedback length: ${feedback.length} characters');
+      print('âœ… Evaluation complete');
+      print('ðŸ“ Feedback length: ${feedback.length} characters');
 
       return GeminiEvaluationResult(
         feedback: feedback.trim(),
         evaluatedAt: DateTime.now(),
       );
     } else {
-      print('❌ Full error response:');
+      print('âŒ Full error response:');
       print(response.body);
       throw Exception('Gemini API error: ${response.statusCode}');
     }
@@ -136,7 +137,7 @@ class GeminiEvaluator {
         }
       });
 
-      print('📸 Prepared photo ${i + 1}/${photoPaths.length}');
+      print('ðŸ“¸ Prepared photo ${i + 1}/${photoPaths.length}');
     }
 
     return imageParts;

@@ -293,8 +293,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
                       color: isSelected ? AppTheme.primaryColor : AppTheme.cardColor,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isSelected ? AppTheme.accentColor : AppTheme.borderColor,
-                        width: isSelected ? 2 : 1,
+                        color: AppTheme.borderColor,
+                        width: 1,
                       ),
                     ),
                     child: Column(
@@ -392,8 +392,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
                       color: isSelected ? AppTheme.primaryColor : AppTheme.cardColor,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: isSelected ? AppTheme.primaryColor : AppTheme.borderColor,
-                        width: isSelected ? 2 : 1,
+                        color: AppTheme.borderColor,
+                        width: 1,
                       ),
                     ),
                     child: Row(
@@ -438,12 +438,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
                             ],
                           ),
                         ),
-                        if (isSelected)
-                          const Icon(
-                            Icons.check_circle,
-                            color: AppTheme.accentColor,
-                            size: 24,
-                          ),
                       ],
                     ),
                   ),
@@ -534,8 +528,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
                       color: isSelected ? AppTheme.primaryColor : AppTheme.cardColor,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: isSelected ? AppTheme.accentColor : AppTheme.borderColor,
-                        width: isSelected ? 2 : 1,
+                        color: AppTheme.borderColor,
+                        width: 1,
                       ),
                     ),
                     child: Column(
