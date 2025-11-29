@@ -1,4 +1,4 @@
-// lib/services/learning_manager.dart - COMPLETE REPLACEMENT
+// lib/services/learning_manager.dart
 
 import 'dart:convert';
 import 'package:cactus/cactus.dart';
@@ -12,35 +12,41 @@ class LearningManager {
   LearningManager._init();
 
   final CactusLM _llm = CactusLM();
-  
-  // TEMPORARY: Use mock data until network is stable
-  static const bool USE_MOCK_DATA = true;
+  bool _isInitialized = false;
 
   Future<void> initialize() async {
-    if (USE_MOCK_DATA) {
-      print('⚠️ Using mock data mode - AI model download skipped');
+    if (_isInitialized) {
+      print('✅ LLM already initialized');
       return;
     }
-    
+
     try {
+      print('📥 Starting model download...');
+      
+      // Download the model (using qwen3-0.6 as recommended by Cactus docs)
       await _llm.downloadModel(
-        model: "qwen3-0.6",
+        model: "local-lfm2-vl-450m",
         downloadProcessCallback: (progress, status, isError) {
           if (isError) {
             print('❌ Download error: $status');
           } else {
-            print('📥 $status ${progress != null ? '(${(progress * 100).toInt()}%)' : ''}');
+            final percentage = progress != null ? '(${(progress * 100).toInt()}%)' : '';
+            print('📥 $status $percentage');
           }
         },
       );
 
+      print('🔧 Initializing model...');
+      
+      // Initialize the model
       await _llm.initializeModel(
         params: CactusInitParams(
-          model: "qwen3-0.6",
+          model: "local-lfm2-vl-450m",
           contextSize: 2048,
         ),
       );
 
+      _isInitialized = true;
       print('✅ Cactus LLM initialized successfully');
     } catch (e) {
       print('❌ Error initializing LLM: $e');
@@ -54,27 +60,24 @@ class LearningManager {
     required String level,
     required int durationDays,
   }) async {
-    if (USE_MOCK_DATA) {
-      print('📝 Generating mock plan for $style ($level, $durationDays days)');
-      await Future.delayed(const Duration(seconds: 2)); // Simulate generation
-      final plan = _generateMockPlan(style, level, durationDays);
-      await _savePlanToDatabase(userId, style, level, durationDays, plan);
-      return plan;
-    }
+    print('🎯 Generating plan: $style, $level, $durationDays days');
 
+    // Ensure LLM is initialized
     await initialize();
 
     final prompt = _buildPrompt(style, level, durationDays);
 
     try {
+      print('💬 Sending prompt to LLM...');
+      
       final messages = [
         ChatMessage(
           role: 'system',
-          content: 'You are a photography instructor creating daily challenges. Respond ONLY with valid JSON, no other text.',
+          content: 'You are an expert photography instructor. You create structured, progressive daily challenges. You MUST respond with ONLY valid JSON, no other text, no markdown formatting, no explanations.',
         ),
         ChatMessage(
           role: 'user',
-          content: prompt,
+          content: '/no_think' + prompt,
         ),
       ];
 
@@ -83,6 +86,7 @@ class LearningManager {
         params: CactusCompletionParams(
           maxTokens: 2000,
           temperature: 0.7,
+          stopSequences: ["<|im_end|>", "<end_of_turn>"],
         ),
       );
 
@@ -90,19 +94,123 @@ class LearningManager {
         throw Exception('LLM generation failed');
       }
 
+      print('✅ Received response from LLM');
+      print('📝 Raw response: ${result.response.substring(0, 200)}...');
+
+      // Clean the response
       String cleanedResponse = result.response
           .replaceAll('```json', '')
           .replaceAll('```', '')
           .trim();
+      
+      // Remove any leading/trailing text that's not JSON
+      final jsonStart = cleanedResponse.indexOf('{');
+      final jsonEnd = cleanedResponse.lastIndexOf('}');
+      
+      if (jsonStart != -1 && jsonEnd != -1) {
+        cleanedResponse = cleanedResponse.substring(jsonStart, jsonEnd + 1);
+      }
 
+      print('🧹 Cleaned response: ${cleanedResponse.substring(0, 200)}...');
+
+      // Parse JSON
       final planData = jsonDecode(cleanedResponse);
+      
+      print('✅ JSON parsed successfully');
+      print('📊 Generated ${(planData['challenges'] as List).length} challenges');
+
+      // Save to database
       await _savePlanToDatabase(userId, style, level, durationDays, planData);
 
       return planData;
     } catch (e) {
       print('❌ Error generating plan: $e');
-      rethrow;
+      print('💡 Falling back to mock data...');
+      
+      // Fallback to mock data if AI fails
+      final mockPlan = _generateMockPlan(style, level, durationDays);
+      await _savePlanToDatabase(userId, style, level, durationDays, mockPlan);
+      return mockPlan;
     }
+  }
+
+  String _buildPrompt(String style, String level, int durationDays) {
+    return '''
+Create a $durationDays-day $style photography learning plan for a $level level photographer.
+
+CRITICAL INSTRUCTIONS:
+1. Generate EXACTLY $durationDays challenges (one per day)
+2. Each challenge must be progressive (build on previous days)
+3. Respond with ONLY valid JSON - no markdown, no explanations, no extra text
+4. Follow the exact format below
+
+Required JSON format:
+{
+  "plan_name": "$style Photography - $durationDays Day Challenge",
+  "challenges": [
+    {
+      "day": 1,
+      "title": "Challenge title (max 6 words)",
+      "description": "What the user should photograph today (2-3 sentences)",
+      "tips": ["Practical tip 1", "Practical tip 2", "Practical tip 3"],
+      "subtasks": [
+        {"title": "Step 1 description", "order": 1},
+        {"title": "Step 2 description", "order": 2},
+        {"title": "Step 3 description", "order": 3},
+        {"title": "Step 4 description", "order": 4}
+      ]
+    }
+  ]
+}
+
+Guidelines for $level level:
+${_getLevelGuidelines(level)}
+
+Focus areas for $style photography:
+${_getStyleGuidelines(style)}
+
+Generate the JSON now:''';
+  }
+
+  String _getLevelGuidelines(String level) {
+    switch (level.toLowerCase()) {
+      case 'beginner':
+        return '''- Start with basic camera settings and composition
+- Focus on one concept per day
+- Use simple, clear instructions
+- Encourage experimentation
+- Build confidence gradually''';
+      case 'intermediate':
+        return '''- Assume understanding of basic exposure triangle
+- Introduce advanced composition techniques
+- Challenge creative thinking
+- Combine multiple concepts
+- Push technical boundaries''';
+      case 'advanced':
+        return '''- Focus on artistic vision and style
+- Master challenging lighting conditions
+- Explore creative post-processing
+- Develop signature techniques
+- Professional-level execution''';
+      default:
+        return '- Balanced approach to learning photography';
+    }
+  }
+
+  String _getStyleGuidelines(String style) {
+    final guidelines = {
+      'Street': 'candid moments, urban environments, storytelling, decisive moment, light and shadow',
+      'Portrait': 'lighting techniques, posing, depth of field, eye contact, environmental context',
+      'Landscape': 'golden hour, leading lines, foreground interest, wide angles, weather conditions',
+      'Wildlife': 'patience, telephoto techniques, animal behavior, natural habitat, action shots',
+      'Architecture': 'lines and geometry, perspective, symmetry, detail shots, urban patterns',
+      'Sports': 'fast shutter speeds, anticipation, peak action, continuous focus, motion blur',
+      'Automotive': 'angles and reflections, motion panning, detail shots, environmental context',
+      'Event': 'storytelling, candid moments, key moments, lighting challenges, wide and tight shots',
+      'Product': 'clean backgrounds, lighting control, detail focus, styling, multiple angles',
+    };
+    
+    return guidelines[style] ?? 'general photography techniques and principles';
   }
 
   Map<String, dynamic> _generateMockPlan(String style, String level, int durationDays) {
@@ -114,24 +222,24 @@ class LearningManager {
         'description': _getMockDescription(style, level, day),
         'tips': _getMockTips(style, day),
         'subtasks': [
-          {'title': 'Scout and plan location', 'order': 1},
-          {'title': 'Setup camera and composition', 'order': 2},
-          {'title': 'Capture 3 photos', 'order': 3},
-          {'title': 'Review and adjust', 'order': 4}
+          {'title': 'Scout and plan your location', 'order': 1},
+          {'title': 'Setup camera with proper settings', 'order': 2},
+          {'title': 'Capture 3 different photos', 'order': 3},
+          {'title': 'Review and adjust technique', 'order': 4}
         ]
       };
     });
 
     return {
-      'plan_name': '$style Photography - $durationDays Days',
+      'plan_name': '$style Photography - $durationDays Day Challenge',
       'challenges': challenges,
     };
   }
 
   String _getMockTitle(String style, int day) {
     final titles = {
-      'Street': ['Urban Lines', 'People in Motion', 'Street Patterns', 'City Lights', 'Urban Contrast', 'Candid Moments', 'Architecture Details'],
-      'Portrait': ['Natural Light Portrait', 'Golden Hour', 'Indoor Portrait', 'Environmental Portrait', 'Close-up Details', 'Depth of Field', 'Expression Study'],
+      'Street': ['Urban Geometry', 'People in Motion', 'Street Patterns', 'City Lights', 'Urban Contrast', 'Candid Moments', 'Architecture Details'],
+      'Portrait': ['Natural Light Portrait', 'Golden Hour Glow', 'Indoor Portrait', 'Environmental Portrait', 'Close-up Details', 'Depth of Field', 'Expression Study'],
       'Landscape': ['Golden Hour Magic', 'Leading Lines', 'Water Reflections', 'Sky Drama', 'Foreground Interest', 'Wide Angle', 'Natural Frames'],
       'Wildlife': ['Bird Behavior', 'Action Shots', 'Natural Habitat', 'Macro Details', 'Silhouettes', 'Eye Focus', 'Environmental Context'],
     };
@@ -181,40 +289,6 @@ class LearningManager {
     return focuses[day % focuses.length];
   }
 
-  String _buildPrompt(String style, String level, int durationDays) {
-    return '''
-Create a $durationDays-day $style photography learning plan for a $level photographer.
-
-Generate a JSON object with exactly $durationDays challenges. Each challenge should have:
-- day: day number (1 to $durationDays)
-- title: Short challenge title (max 6 words)
-- description: What to capture (2-3 sentences)
-- tips: Array of 3 practical tips
-- subtasks: Array of 3-4 progressive steps
-
-Format:
-
-{
-  "plan_name": "$style Photography - $durationDays Days",
-  "challenges": [
-    {
-      "day": 1,
-      "title": "Understanding Light",
-      "description": "Capture 3 photos showing different lighting conditions.",
-      "tips": ["Shoot during golden hour", "Use manual mode", "Focus on shadows"],
-      "subtasks": [
-        {"title": "Find location", "order": 1},
-        {"title": "Setup camera settings", "order": 2},
-        {"title": "Capture 3 photos", "order": 3}
-      ]
-    }
-  ]
-}
-
-IMPORTANT: Output ONLY valid JSON, no markdown, no explanations.
-''';
-  }
-
   Future<void> _savePlanToDatabase(
     int userId,
     String style,
@@ -224,6 +298,7 @@ IMPORTANT: Output ONLY valid JSON, no markdown, no explanations.
   ) async {
     final db = await DatabaseHelper.instance.database;
 
+    // Deactivate all current active tracks
     await db.update(
       'tracks',
       {'is_active': 0},
@@ -231,9 +306,10 @@ IMPORTANT: Output ONLY valid JSON, no markdown, no explanations.
       whereArgs: [userId, 1],
     );
 
+    // Create new track
     final track = Track(
       userId: userId,
-      name: planData['plan_name'] ?? '$style Photography',
+      name: planData['plan_name'] ?? '$style Photography - $durationDays Days',
       style: style,
       level: level,
       durationDays: durationDays,
@@ -242,7 +318,9 @@ IMPORTANT: Output ONLY valid JSON, no markdown, no explanations.
     );
 
     final trackId = await db.insert('tracks', track.toMap());
+    print('✅ Track saved to database (ID: $trackId)');
 
+    // Save challenges
     final challenges = planData['challenges'] as List;
     for (var challengeData in challenges) {
       final challenge = Challenge(
@@ -255,6 +333,7 @@ IMPORTANT: Output ONLY valid JSON, no markdown, no explanations.
 
       final challengeId = await db.insert('challenges', challenge.toMap());
 
+      // Save subtasks
       final subtasks = challengeData['subtasks'] as List;
       for (var subtaskData in subtasks) {
         final subtask = Subtask(
@@ -266,11 +345,15 @@ IMPORTANT: Output ONLY valid JSON, no markdown, no explanations.
         await db.insert('subtasks', subtask.toMap());
       }
     }
+    
+    print('✅ All challenges and subtasks saved');
   }
 
   void dispose() {
-    if (!USE_MOCK_DATA) {
+    if (_isInitialized) {
       _llm.unload();
+      _isInitialized = false;
+      print('🔄 LLM unloaded');
     }
   }
 }

@@ -897,29 +897,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildChatFAB() {
-    return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppTheme.accentColor,
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme. accentColor.withOpacity(0.4),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+  return Container(
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: AppTheme.accentColor,
+      boxShadow: [
+        BoxShadow(
+          color: AppTheme.accentColor.withOpacity(0.4),
+          blurRadius: 16,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ),
+    child: FloatingActionButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ChatScreen(), // ← No challenge = general mode
           ),
-        ],
-      ),
-      child: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ChatScreen()),
-          );
-        },
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        child: const Icon(Icons.chat_bubble_outline, size: 28),
-      ),
-    );
-  }
+        );
+      },
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: const Icon(Icons.chat_bubble_outline, size: 28),
+    ),
+  );
+}
 }

@@ -3,12 +3,16 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'dart:convert';
 import '../models/challenge.dart';
 import '../models/subtask.dart';
 import '../services/subtask_service.dart';
 import '../services/database_helper.dart';
+import '../services/track_service.dart';
+import '../services/photo_evaluator.dart';
 import '../theme/app_theme.dart';
 import 'chat_screen.dart';
+import 'feedback_screen.dart';
 
 class ActiveTrackScreen extends StatefulWidget {
   final Challenge challenge;
@@ -198,40 +202,122 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
   }
 
   Future<void> _submitForReview() async {
-    if (photoPaths.length < 3) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please upload 3 photos before submitting'),
-          backgroundColor: AppTheme.accentColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-      return;
-    }
+  if (photoPaths.length < 3) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Please upload 3 photos before submitting'),
+        backgroundColor: AppTheme.accentColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+    return;
+  }
 
-    final allCompleted = await SubtaskService.instance.areAllSubtasksCompleted(widget.challenge.id!);
-    
-    if (!allCompleted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please complete all tasks first'),
-          backgroundColor: AppTheme.accentColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-      return;
-    }
+  final allCompleted = await SubtaskService.instance.areAllSubtasksCompleted(widget.challenge.id!);
+  
+  if (!allCompleted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Please complete all tasks first'),
+        backgroundColor: AppTheme.accentColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+    return;
+  }
 
+  // Show loading dialog
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => Center(
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        margin: const EdgeInsets.symmetric(horizontal: 40),
+        decoration: BoxDecoration(
+          color: AppTheme.backgroundColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppTheme.borderColor),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(
+              color: AppTheme.accentColor,
+              strokeWidth: 3,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Evaluating your photos...',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'This may take a moment',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  try {
+    // Get track info for context
     final db = await DatabaseHelper.instance.database;
+    final trackResult = await db.query(
+      'tracks',
+      where: 'id = ?',
+      whereArgs: [widget.challenge.trackId],
+      limit: 1,
+    );
+
+    String photographyStyle = 'Street';
+    String skillLevel = 'Beginner';
+
+    if (trackResult.isNotEmpty) {
+      photographyStyle = trackResult.first['style'] as String;
+      skillLevel = trackResult.first['level'] as String;
+    }
+
+    print('🎯 Starting evaluation...');
+    print('📸 Photos: ${photoPaths.length}');
+    print('🎨 Style: $photographyStyle');
+    print('📊 Level: $skillLevel');
+
+    // Evaluate photos
+    final evaluation = await PhotoEvaluator.instance.evaluatePhotos(
+      challenge: widget.challenge,
+      photoPaths: photoPaths,
+      photographyStyle: photographyStyle,
+      skillLevel: skillLevel,
+    );
+
+    print('✅ Evaluation complete');
+
+    // Save submission
     await db.update(
       'submissions',
-      {'submitted_at': DateTime.now().toIso8601String()},
+      {
+        'submitted_at': DateTime.now().toIso8601String(),
+        'validated': 1,
+      },
       where: 'challenge_id = ?',
       whereArgs: [widget.challenge.id],
     );
 
+    // Mark challenge as complete
     await db.update(
       'challenges',
       {
@@ -242,18 +328,64 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
       whereArgs: [widget.challenge.id],
     );
 
+    // Save feedback to database
+    final submissionResult = await db.query(
+      'submissions',
+      where: 'challenge_id = ?',
+      whereArgs: [widget.challenge.id],
+      limit: 1,
+    );
+
+    if (submissionResult.isNotEmpty) {
+      final submissionId = submissionResult.first['id'] as int;
+      
+      await db.insert('feedback', {
+        'submission_id': submissionId,
+        'validation_result': jsonEncode(evaluation.toJson()),
+        'technical_notes': evaluation.feedback.substring(0, evaluation.feedback.length > 200 ? 200 : evaluation.feedback.length),
+        'suggestions': 'See full feedback',
+        'created_at': DateTime.now().toIso8601String(),
+      });
+    }
+
+    print('💾 Feedback saved to database');
+
+    // Close loading dialog
+    if (mounted) Navigator.pop(context);
+
+    // Show feedback screen
+    if (mounted) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FeedbackScreen(
+            evaluation: evaluation,
+            photoPaths: photoPaths,
+          ),
+        ),
+      );
+
+      // Then go back to home
+      Navigator.pop(context);
+    }
+  } catch (e) {
+    print('❌ Error during submission: $e');
+    
+    // Close loading dialog
+    if (mounted) Navigator.pop(context);
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('✅ Challenge completed!'),
-          backgroundColor: AppTheme.primaryColor,
+          content: Text('Error evaluating photos: ${e.toString()}'),
+          backgroundColor: AppTheme.accentColor,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
-      Navigator.pop(context);
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -423,7 +555,11 @@ class _ActiveTrackScreenState extends State<ActiveTrackScreen> {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const ChatScreen()),
+              MaterialPageRoute(
+                builder: (context) => ChatScreen(
+                  currentChallenge: widget.challenge,
+                ),
+              ),
             );
           },
           backgroundColor: AppTheme.primaryColor,
